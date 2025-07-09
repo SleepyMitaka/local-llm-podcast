@@ -1,0 +1,11 @@
+ollama
+TTS
+pydub
+sounddevice
+queue
+CoquiEngine
+TextToAudioStream
+RealtimeTTS
+logging
+time
+requests
