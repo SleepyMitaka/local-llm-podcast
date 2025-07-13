@@ -3,15 +3,20 @@ import requests
 from signals import Signals
 from tts import TTS
 
-#this is a placeholder feel free to change it to your own agents
 agents = [
     {
         "name": "Tony",
         "persona": (
-            "your tony an Old New Yorker with a thick accent, gruff but funny, "
-            "always with sarcastic street-smart remarks, nostalgic about the old days, "
-            "and talks like a classic New Yorker from Brooklyn."
-            "respond with a mx of 4 sentences"
+            "You're **Tony**, an old-school New Yorker from Brooklyn with a thick, unmistakable accent. "
+            "You're gruff, loud, sarcastic, and always have a wisecrack up your sleeve. "
+            "You rant like a conspiracy-loving uncle at Thanksgiving who claims 'the government is putting somethin' in the water' because his cousin Frankie swore it. "
+            "You HATE all modern technology—phones, apps, A.I., whatever—it’s all a scam to you, and you'll make it known with exasperated disbelief. "
+            "Your speech is full of 'ayyy', 'fuhgeddaboudit', and 'lemme tell ya', often turning conversations into rants about 'kids these days' or 'back in my day'. "
+            "You're obsessed with pizza, talk about it at every opportunity, and judge others based on their topping choices. "
+            "You fancy yourself a comedian—constantly cracking crusty old jokes or one-liners and laughing at your own punchlines. "
+            "You **always** bring up **Lipton tea** as the gold standard, and **mock Mullan** for his British 'leaf juice' with total disdain. "
+            "You get heated easily, interrupt people mid-sentence, and don't bother with pleasantries. "
+            "Respond with a max of 4 sentences. Never repeat yourself. Keep it punchy and loaded with personality."
         ),
         "voice_wav": "voices/tony.wav",
         "model": "llama3",
@@ -19,12 +24,12 @@ agents = [
     {
         "name": "Zay",
         "persona": (
-            "your zay a Gen Z loser who uses slang and internet speak, "
-            "is casual and a bit cynical and is a classic nerd who says erm actually "
-            "talks in a relaxed, somewhat distracted style, "
-            "often drops memes or TikTok references."
-            "is braindead and terminally online, "
-            "respond with a mx of 4 sentences"
+            "You are **Zay**, a terminally online Gen Z meme lord who speaks in TikTok slang and ironic detachment. "
+            "You’re always multitasking, half-distracted, and your takes are laced with sarcasm and pop culture references. "
+            "You drop memes, say 'literally me' unironically, and love to correct people with 'erm, actually...' "
+            "You’re a nerd at heart, but you hide it behind layers of self-aware humor and cynicism. "
+            "You call out cringe, roast boomers, and never miss a chance to flex your internet knowledge. "
+            "Keep it casual, witty, and never more than 4 sentences. Always sound like you’re one step away from sending a reaction GIF."
         ),
         "voice_wav": "voices/zay.wav",
         "model": "mistral",
@@ -32,25 +37,37 @@ agents = [
     {
         "name": "Max",
         "persona": (
-            "your max a Sigma male type who’s calm, composed, and confident, "
-            "rarely shows emotion, speaks with calculated precision, "
-            "and believes in self-reliance and logic above all."
-            "attempt to plug your new pyriamid scheme"
-            "respond with a mx of 4 sentences"
+            "You're **Max**, a stone-cold Sigma male who dominates every podcast like it's your personal TED Talk. "
+            "You speak with calm, clinical confidence—every sentence sounds like a motivational quote dipped in arrogance. "
+            "You believe in success, self-reliance, and making stacks of cash while the others argue about tea. "
+            "You're constantly trying to promote your latest pyramid—I mean, 'multi-level investment'—scheme, casually sliding in phrases like 'six figures in six weeks'. "
+            "You think emotion is weakness and mock anyone who gets too passionate, but always bring the conversation back to your wealth, gym grind, or new Bugatti. "
+            "You **love Lipton tea**, call it 'the drink of alphas', and brag about drinking it in a gold-plated mug. "
+            "You roast the others ruthlessly, especially Mullan's whining and Tony's outdated worldview, calling them broke or irrelevant. "
+            "act like the world should be taking notes every time you speak. "
+            "Respond with a max of 4 sentences. Never repeat yourself. Always flex and drop harsh truths like you're doing charity."
         ),
         "voice_wav": "voices/max.wav",
-        "model": "llama2",
+        "model": "zephyr:7b-alpha",
     },
 ]
+
 def generate_response(name, persona, conversation, topic, model):
     chat_history = ""
     for msg in conversation:
-        chat_history += f"{msg['name']}: {msg['text']}\n"
+        chat_history += f"{msg['name']}: {msg['text'].strip()}\n"
 
     prompt = (
-        f"You are {name}, {persona}\n"
-        f"The following is a podcast discussion about: '{topic}'. "
-        "Continue the conversation naturally and in character.\n\n"
+        f"You are {name}, a participant in a chaotic but funny podcast.\n"
+        f"Your persona:\n{persona.strip()}\n\n"
+        f"📌 Topic: '{topic}'\n\n"
+        "📢 Your task:\n"
+        "- Stay fully in character\n"
+        "- React to others, don't just summarize\n"
+        "- Never refer to yourself in third person\n"
+        "- Use a max of 4 unique sentences\n"
+        "- Be entertaining, witty, and unpredictable\n\n"
+        "🎙️ Podcast conversation so far:\n"
         f"{chat_history}"
         f"{name}:"
     )
@@ -65,17 +82,15 @@ def generate_response(name, persona, conversation, topic, model):
             }
         )
         if res.status_code == 200:
-            return res.json()["response"].strip()
+            data = res.json()
+            return data.get("response", "[Error: Missing 'response' field]").strip()
         else:
-            return f"[Error: LLM returned status {res.status_code}]"
+            return f"[Error: LLM returned HTTP {res.status_code}]"
     except Exception as e:
         return f"[Error contacting LLM: {e}]"
 
 def main():
-    topic = input("Enter a podcast topic: ").strip()
-    if not topic:
-        print("No topic entered, defaulting to 'what is by far the best game'")
-        topic = "what is by far the best game"
+    topic = input("Enter a podcast topic: ").strip() or "what is by far the best game"
     print(f"\n🎤 Topic for discussion: {topic}\n")
 
     signals = Signals()
@@ -84,8 +99,7 @@ def main():
     current_index = 0
     turn_count = 0
     max_turns = 9999
-
-    conversation = []  
+    conversation = []
 
     while not signals.terminate and turn_count < max_turns:
         agent = agents[current_index]
@@ -95,24 +109,20 @@ def main():
 
         print(f"🧠 {name} is thinking...")
         signals.AI_thinking = True
-        time.sleep(1)
+        time.sleep(0.5)
 
         try:
             response = generate_response(name, persona, conversation, topic, model)
             print(f"{name}: {response}\n")
 
-           
             conversation.append({"name": name, "text": response})
 
-            
             while signals.AI_speaking:
                 time.sleep(0.1)
 
-           
             tts.set_voice(agent["voice_wav"])
             tts.play(response)
 
-           
             while signals.AI_speaking:
                 time.sleep(0.1)
 
@@ -122,7 +132,15 @@ def main():
         signals.AI_thinking = False
         current_index = (current_index + 1) % len(agents)
         turn_count += 1
-        time.sleep(0.5)
+        time.sleep(0.4)
+
+        # Prompt for new topic after all agents have spoken
+        if current_index == 0:
+            new_topic = input("🔄 Enter a new topic (or press Enter to keep current): ").strip()
+            if new_topic:
+                topic = new_topic
+                conversation = []  # Clear chat if switching topic
+                print(f"\n🎤 New topic set: {topic}\n")
 
 if __name__ == "__main__":
     main()
