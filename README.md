@@ -22,3 +22,7 @@ python main.py
 ## Notes
 - It loops endlessly until stopped (Ctrl+C).
 - XTTS will clone the speaker identity from your provided `.wav` files.
+
+## Credits
+- i got this idea from dougdougs stream where he did a simillar llm podcast using chatgpt
+- i got the idea to use xtts from kimjammers neuro project check him out!
